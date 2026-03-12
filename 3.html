@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Sinh viên & Form Hệ thống</title>
+    <style>
+        /* Định nghĩa biến màu sắc để dễ quản lý */
+        :root {
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --accent-color: #e91e63;
+            --error-color: #ff4d4d;
+            --success-color: #2ecc71;
+            --bg-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .main-wrapper {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .section-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-left: 5px solid var(--primary-color);
+            padding-left: 15px;
+            font-size: 1.5rem;
+        }
+
+        /* Input styling */
+        .controls-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--primary-color); box-shadow: 0 0 5px rgba(79, 172, 254, 0.5); }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover { background: #3b8ed9; transform: translateY(-1px); }
+
+        /* Table design */
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #f8f9fa;
+            color: #555;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #eee;
+        }
+
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+
+        tr:last-child td { border-bottom: none; }
+
+        .row-warning { background-color: #fff8e1; }
+
+        .btn-delete { background: #ff7675; font-size: 12px; padding: 5px 10px; }
+
+        /* Validation & States */
+        .msg-error { color: var(--error-color); font-size: 0.85rem; margin-top: 4px; min-height: 1.2em; }
+        .msg-success { color: var(--success-color); font-weight: bold; text-align: center; font-size: 1.2rem; }
+        .price-display { font-size: 24px; font-weight: 800; color: var(--accent-color); }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+
+    <section class="section-card">
+        <h2><i class="icon"></i> Danh Sách Học Viên</h2>
+        
+        <div class="controls-group">
+            <input id="inputName" type="text" placeholder="Tên sinh viên...">
+            <input id="inputScore" type="number" step="0.1" placeholder="Điểm (0-10)">
+            <button id="btnAdd">Thêm mới</button>
+        </div>
+
+        <div class="controls-group">
+            <input id="inputSearch" type="text" placeholder="Tìm kiếm theo tên...">
+            <select id="selectFilter">
+                <option value="all">-- Tất cả xếp loại --</option>
+                <option value="Giỏi">Giỏi</option>
+                <option value="Khá">Khá</option>
+                <option value="Trung bình">Trung bình</option>
+                <option value="Yếu">Yếu</option>
+            </select>
+            <button id="btnSort">Đổi chiều sắp xếp</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Họ và Tên</th>
+                        <th>Điểm số</th>
+                        <th>Xếp loại</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTable"></tbody>
+            </table>
+        </div>
+        <div id="summaryStats" style="margin-top: 15px; font-style: italic;"></div>
+    </section>
+
+    <section class="section-card">
+        <h2>Thành Viên Mới</h2>
+        <form id="formRegister" novalidate>
+            <div class="controls-group" style="display: block;">
+                <input id="regName" style="width:100%" placeholder="Họ và tên">
+                <div class="msg-error" id="errName"></div>
+
+                <input id="regEmail" style="width:100%" placeholder="Địa chỉ Email">
+                <div class="msg-error" id="errEmail"></div>
+
+                <input id="regPhone" style="width:100%" placeholder="Số điện thoại">
+                <div class="msg-error" id="errPhone"></div>
+
+                <input id="regPass" type="password" style="width:100%" placeholder="Mật khẩu">
+                <div class="msg-error" id="errPass"></div>
+
+                <input id="regConfirm" type="password" style="width:100%" placeholder="Xác nhận mật khẩu">
+                <div class="msg-error" id="errConfirm"></div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                Giới tính: 
+                <label><input type="radio" name="gender" value="Nam" checked> Nam</label>
+                <label><input type="radio" name="gender" value="Nữ"> Nữ</label>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label><input type="checkbox" id="checkTerms"> Tôi đồng ý với nội quy hệ thống</label>
+            </div>
+
+            <button type="submit" style="width: 100%; background: #2c3e50;">Hoàn tất đăng ký</button>
+        </form>
+        <div id="regSuccess" class="msg-success hidden">Đăng ký thành công! Chào mừng bạn.</div>
+    </section>
+
+    <section class="section-card">
+        <h2>Tính Toán Đơn Hàng</h2>
+        <div class="controls-group">
+            <select id="selProduct">
+                <option value="0">-- Chọn loại hàng --</option>
+                <option value="150000">Áo sơ mi (150k)</option>
+                <option value="200000">Quần Tây (200k)</option>
+            </select>
+            <input id="numQuantity" type="number" value="1" min="1" style="width: 80px;">
+        </div>
+        <p>Thành tiền dự kiến:</p>
+        <div id="displayTotal" class="price-display">0 VNĐ</div>
+    </section>
+
+</div>
+
+<script>
+/** * LOGIC QUẢN LÝ ĐIỂM (BÀI 1)
+ */
+let db_students = [];
+let isAscending = true;
+
+const getRank = (score) => {
+    if (score >= 8.5) return "Giỏi";
+    if (score >= 7.0) return "Khá";
+    if (score >= 5.0) return "Trung bình";
+    return "Yếu";
+};
+
+const renderStudents = () => {
+    const table = document.getElementById("studentTable");
+    const keyword = document.getElementById("inputSearch").value.toLowerCase();
+    const filter = document.getElementById("selectFilter").value;
+    
+    // Lọc dữ liệu
+    let filteredData = db_students.filter(s => {
+        const matchName = s.name.toLowerCase().includes(keyword);
+        const matchRank = (filter === "all" || getRank(s.score) === filter);
+        return matchName && matchRank;
+    });
+
+    // Sắp xếp
+    filteredData.sort((a, b) => isAscending ? a.score - b.score : b.score - a.score);
+
+    // Hiển thị
+    table.innerHTML = filteredData.map((s, idx) => `
+        <tr class="${s.score < 5 ? 'row-warning' : ''}">
+            <td>${idx + 1}</td>
+            <td>${s.name}</td>
+            <td><b>${s.score}</b></td>
+            <td>${getRank(s.score)}</td>
+            <td><button class="btn-delete" onclick="removeStudent(${s.id})">Xóa</button></td>
+        </tr>
+    `).join('');
+
+    // Thống kê
+    const avg = db_students.length ? (db_students.reduce((sum, s) => sum + s.score, 0) / db_students.length).toFixed(2) : 0;
+    document.getElementById("summaryStats").innerHTML = `Sĩ số: <b>${db_students.length}</b> | Điểm trung bình: <b>${avg}</b>`;
+};
+
+const addStudent = () => {
+    const nameEl = document.getElementById("inputName");
+    const scoreEl = document.getElementById("inputScore");
+    const val = parseFloat(scoreEl.value);
+
+    if (!nameEl.value.trim() || isNaN(val) || val < 0 || val > 10) {
+        alert("Vui lòng nhập tên và điểm hợp lệ (0-10)!");
+        return;
+    }
+
+    db_students.push({ id: Date.now(), name: nameEl.value.trim(), score: val });
+    nameEl.value = ""; scoreEl.value = "";
+    renderStudents();
+};
+
+const removeStudent = (id) => {
+    db_students = db_students.filter(s => s.id !== id);
+    renderStudents();
+};
+
+// Gán sự kiện cho Bài 1
+document.getElementById("btnAdd").onclick = addStudent;
+document.getElementById("btnSort").onclick = () => { isAscending = !isAscending; renderStudents(); };
+document.getElementById("inputSearch").oninput = renderStudents;
+document.getElementById("selectFilter").onchange = renderStudents;
+
+
+/** * LOGIC FORM (BÀI 2.1)
+ */
+const patterns = {
+    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    phone: /^0\d{9}$/,
+    pass: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+};
+
+document.getElementById("formRegister").onsubmit = function(e) {
+    e.preventDefault();
+    let isValid = true;
+    
+    // Reset errors
+    document.querySelectorAll(".msg-error").forEach(el => el.innerText = "");
+
+    const check = (id, errorId, condition, msg) => {
+        if (condition) {
+            document.getElementById(errorId).innerText = msg;
+            isValid = false;
+        }
+    };
+
+    const name = document.getElementById("regName").value;
+    const email = document.getElementById("regEmail").value;
+    const phone = document.getElementById("regPhone").value;
+    const pass = document.getElementById("regPass").value;
+    const confirm = document.getElementById("regConfirm").value;
+
+    check("regName", "errName", name.length < 3, "Họ tên phải từ 3 ký tự");
+    check("regEmail", "errEmail", !patterns.email.test(email), "Email không đúng định dạng");
+    check("regPhone", "errPhone", !patterns.phone.test(phone), "SĐT phải gồm 10 số bắt đầu bằng 0");
+    check("regPass", "errPass", !patterns.pass.test(pass), "Mật khẩu cần ít nhất 8 ký tự, 1 chữ hoa, 1 chữ thường và 1 số");
+    check("regConfirm", "errConfirm", pass !== confirm, "Mật khẩu xác nhận không khớp");
+
+    if (!document.getElementById("checkTerms").checked) {
+        alert("Vui lòng đồng ý với điều khoản");
+        isValid = false;
+    }
+
+    if (isValid) {
+        this.classList.add("hidden");
+        document.getElementById("regSuccess").classList.remove("hidden");
+    }
+};
+
+
+/** * LOGIC ĐƠN HÀNG (BÀI 2.2)
+ */
+const updateOrder = () => {
+    const unitPrice = parseInt(document.getElementById("selProduct").value);
+    const qty = parseInt(document.getElementById("numQuantity").value);
+    const total = unitPrice * qty;
+    
+    document.getElementById("displayTotal").innerText = total > 0 
+        ? total.toLocaleString('vi-VN') + " VNĐ" 
+        : "0 VNĐ";
+};
+
+document.getElementById("selProduct").onchange = updateOrder;
+document.getElementById("numQuantity").oninput = updateOrder;
+
+</script>
+</body>
+</html>
